@@ -49,6 +49,8 @@ class WebLogger implements LoggerInterface {
     this._init(config);
   }
 
+  private errorTimes = 0;
+
   private queue: Queues;
 
   private track: Track;
@@ -155,19 +157,20 @@ class WebLogger implements LoggerInterface {
    */
   private _update(): void {
     //上传
-    const queueList = this.queue.parseList();
+    const tmpData = window.localStorage.getItem('tmpLog');
+
     if (this.queue.getQueueLength() > 0) {
       const data = {
-        queue: JSON.parse(JSON.stringify(queueList)),
+        ...this.queue.parse(),
         filterCollect: true,
       };
       //先拿到数据清空  在上传
       this.emptyQueue();
+      data['body'] = JSON.stringify(data['body']);
       this.send(data);
-    }
-    const tmpData = window.localStorage.getItem('tmpLog');
-    if (tmpData) {
+    } else if (tmpData && this.errorTimes === 0) {
       const data = JSON.parse(tmpData);
+      localStorage.removeItem('tmpLog');
       data && this.send(data);
     }
   }
@@ -176,30 +179,44 @@ class WebLogger implements LoggerInterface {
 
   public send(data: object): void {
     console.log('开始请求，数据:', data);
-    axios({
-      url: defaultOptions.url,
-      method: 'POST',
-      data: data,
-      headers: {
-        'Content-type': 'application/x-www-form-urlencoded',
-      },
-    })
-      .then((res: object) => {
-        const traceId = res['data']['traceId'];
-        console.log(res, traceId);
-        if (!defaultOptions.traceId && traceId) {
-          this.setDefaultOptions({
-            traceId: traceId,
-          });
-        }
-        console.log('请求成功');
+    if (this.errorTimes < 5) {
+      axios({
+        url: defaultOptions.url,
+        method: 'POST',
+        // params: data,
+        data: data,
+        headers: {
+          'Content-type': 'application/json;charset=utf-8',
+        },
       })
-      .catch(err => {
-        console.error('请求失败', err);
-        //日志服务器挂了怎么办？  怎么判定挂了？ 其实还是得记录上次上传时间 做一个节流
-        // this.queue.pushArr(data['queue']) 最好不要push 回去 有bug 放到缓存里面去
-        window.localStorage.setItem('tmpLog', JSON.stringify(data));
-      });
+        .then((res: object) => {
+          this.errorTimes = 0;
+          console.log('请求成功');
+          const resData = res['data']['data'];
+          const traceId = resData['traceId'];
+          if (!defaultOptions.traceId && traceId) {
+            this.setDefaultOptions({
+              traceId: traceId,
+            });
+          }
+        })
+        .catch(err => {
+          //累计错误超过5次 直接存储本地？ 还是直接out掉？ 目前直接out掉
+          this.errorTimes += 1;
+          console.error('请求失败', err);
+          //日志服务器挂了怎么办？  怎么判定挂了？ 其实还是得记录上次上传时间 做一个节流
+          // this.queue.pushArr(data['queue']) 最好不要push 回去 有bug 放到缓存里面去
+          window.localStorage.setItem('tmpLog', JSON.stringify(data));
+        });
+    } else {
+      const logs = JSON.stringify(window.localStorage.getItem('tmpLog'));
+      if (logs['body']) {
+        const body = JSON.parse(logs['body']);
+        const logsBody = JSON.parse(data['body']) || [];
+        logs['body'] = JSON.stringify(body.concat(logsBody));
+        window.localStorage.setItem('tmpLog', JSON.stringify(logs));
+      }
+    }
   }
 }
 

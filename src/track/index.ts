@@ -106,7 +106,7 @@ class Track {
         const updateVal = {
           elementId: node.id,
           elementType: node.nodeName,
-          optionsStamp: event.timeStamp,
+          optionsStamp: Math.ceil(event.timeStamp),
         };
         this.push(trackProducer(eventKey, updateVal, TrackType.TAP));
       }

@@ -1,4 +1,12 @@
 import LoggerItem from './loggerItem';
+import defaultOptions from './options';
+
+// enum LogLeave {
+//   INFO = 'INFO',
+//   ERROR = 'ERROR',
+//   TRACE = 'TRACE',
+//   WARN = 'WARN',
+// }
 
 export class Queues {
   private queue: Array<LoggerItem>;
@@ -28,10 +36,24 @@ export class Queues {
     this.queue.splice(0, this.queue.length);
   }
 
-  parseList(): Array<object> {
-    return this.queue.map(item => {
+  parse(): object {
+    // this.params = itemParams;
+    const request = {};
+    if (defaultOptions.traceId) {
+      request['traceId'] = defaultOptions.traceId;
+    }
+    request['system'] = defaultOptions.system;
+
+    request['project'] = defaultOptions.project;
+
+    request['profile'] = defaultOptions.profile;
+
+    request['level'] = 'INFO';
+
+    request['body'] = this.queue.map(function(item: LoggerItem) {
       return item.parse();
     });
+    return request;
   }
 }
 //单例

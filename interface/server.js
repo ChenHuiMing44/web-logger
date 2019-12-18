@@ -5,7 +5,7 @@ http
   .createServer(function(request, response) {
     response.setHeader('Access-Control-Allow-Origin', '*');
     console.log('request come', request.url);
-    response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    response.setHeader('Access-Control-Allow-Headers', '*');
     response.setHeader('Content-Type', 'application/x-www-form-urlencoded;charset=utf-8');
     if (request.url === '/logger/log') {
       let post = '';
