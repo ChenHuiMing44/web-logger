@@ -4,28 +4,26 @@ const CleanWebpackPlugin = require('clean-webpack-plugin');
 
 module.exports = {
   mode: 'development',
-  entry:{
-    index: './src/logger.ts'
+  entry: {
+    index: './src/logger.ts',
   },
-  output:{
+  output: {
     filename: 'index.js',
-    path: path.resolve(__dirname, './dist')
+    path: path.resolve(__dirname, './dist'),
   },
   resolve: {
-    extensions: ['.ts', '.tsx', '.js']
+    extensions: ['.ts', '.tsx', '.js'],
   },
   module: {
     rules: [
       {
         test: /\.ts?$/,
         exclude: '/node_modules',
-        use: [
-          {loader: 'ts-loader'}
-        ]
+        use: [{loader: 'ts-loader'}],
       },
-    ]
+    ],
   },
   plugins: [
-    new CleanWebpackPlugin() // 删除build目录
-  ]
-}
+    new CleanWebpackPlugin(), // 删除build目录
+  ],
+};
